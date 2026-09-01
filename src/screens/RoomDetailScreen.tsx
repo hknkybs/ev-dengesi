@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { getLastCompletion, isWithinCooldown } from '../lib/scoring';
 import { TaskRow } from '../components/TaskRow';
+import { TaskEditRow } from '../components/TaskEditRow';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme';
 import { ThemeColors } from '../theme/palette';
@@ -27,11 +28,16 @@ export function RoomDetailScreen({ route, navigation }: Props) {
   const completeTask = useStore((s) => s.completeTask);
   const activeMemberId = useStore((s) => s.activeMemberId);
   const renameRoom = useStore((s) => s.renameRoom);
+  const updateTask = useStore((s) => s.updateTask);
+  const addTask = useStore((s) => s.addTask);
+  const removeTask = useStore((s) => s.removeTask);
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(room?.name ?? '');
+  const [manageMode, setManageMode] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
 
   if (!room) return null;
 
@@ -46,6 +52,13 @@ export function RoomDetailScreen({ route, navigation }: Props) {
     setEditingName(false);
   }
 
+  function handleAddTask() {
+    const trimmed = newTaskName.trim();
+    if (!trimmed) return;
+    addTask(room!.id, trimmed, 15, 24, 8);
+    setNewTaskName('');
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.topBar}>
@@ -56,6 +69,20 @@ export function RoomDetailScreen({ route, navigation }: Props) {
         >
           <Ionicons name="chevron-back" size={20} color={colors.primary} />
           <Text style={styles.backButtonText}>Geri</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          style={[styles.manageToggle, manageMode && styles.manageToggleActive]}
+          onPress={() => setManageMode((v) => !v)}
+        >
+          <Ionicons
+            name={manageMode ? 'checkmark' : 'options-outline'}
+            size={15}
+            color={manageMode ? colors.textOnDark : colors.primary}
+          />
+          <Text style={[styles.manageToggleText, manageMode && styles.manageToggleTextActive]}>
+            {manageMode ? 'Bitti' : 'Görevleri Düzenle'}
+          </Text>
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -89,6 +116,12 @@ export function RoomDetailScreen({ route, navigation }: Props) {
         </View>
 
         {taskTemplates.map((task) => {
+          if (manageMode) {
+            return (
+              <TaskEditRow key={task.id} task={task} onUpdate={updateTask} onRemove={removeTask} />
+            );
+          }
+
           const last = getLastCompletion(completions, task.id);
           const lastValid = completions
             .filter((c) => c.taskTemplateId === task.id && c.status === 'valid')
@@ -108,7 +141,23 @@ export function RoomDetailScreen({ route, navigation }: Props) {
           );
         })}
 
-        {!activeMemberId && (
+        {manageMode && (
+          <View style={styles.addTaskRow}>
+            <TextInput
+              style={styles.addTaskInput}
+              placeholder="Örn. Camları sil"
+              placeholderTextColor={colors.textMuted}
+              value={newTaskName}
+              onChangeText={setNewTaskName}
+              onSubmitEditing={handleAddTask}
+            />
+            <TouchableOpacity style={styles.addTaskButton} onPress={handleAddTask} activeOpacity={0.85}>
+              <Ionicons name="add" size={20} color={colors.textOnDark} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {!activeMemberId && !manageMode && (
           <Text style={styles.warning}>
             Aktif üye seçili değil. Ayarlar sekmesinden bir üye seç.
           </Text>
@@ -136,6 +185,19 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.pill,
     },
     backButtonText: { color: colors.primary, fontSize: 15, fontFamily: fonts.bodyBold, marginLeft: 2 },
+    manageToggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    manageToggleActive: { backgroundColor: colors.primary },
+    manageToggleText: { color: colors.primary, fontSize: 12, fontFamily: fonts.bodyBold },
+    manageToggleTextActive: { color: colors.textOnDark },
     scroll: { padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl },
     header: { alignItems: 'center', marginBottom: spacing.lg },
     iconBadge: {
@@ -165,6 +227,25 @@ function createStyles(colors: ThemeColors) {
       height: 26,
       borderRadius: 13,
       backgroundColor: colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addTaskRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+    addTaskInput: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 10,
+      color: colors.text,
+      fontFamily: fonts.bodyMedium,
+    },
+    addTaskButton: {
+      backgroundColor: colors.primary,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.md,
       alignItems: 'center',
       justifyContent: 'center',
     },

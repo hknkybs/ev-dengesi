@@ -8,6 +8,7 @@ import {
   HouseholdMode,
   HouseholdType,
   Member,
+  TaskTemplate,
   TemplateKey,
   ThemeMode,
 } from '../types';
@@ -39,6 +40,18 @@ interface Actions {
   renameRoom: (roomId: string, name: string) => void;
   addRoom: (name: string, icon: string) => void;
   removeRoom: (roomId: string) => void;
+  addTask: (
+    roomId: string,
+    name: string,
+    basePoints: number,
+    expectedPeriodHours: number,
+    cooldownHours: number
+  ) => void;
+  updateTask: (
+    taskId: string,
+    patch: Partial<Pick<TaskTemplate, 'name' | 'basePoints' | 'expectedPeriodHours' | 'cooldownHours'>>
+  ) => void;
+  removeTask: (taskId: string) => void;
 }
 
 type Store = AppState & Actions;
@@ -258,6 +271,60 @@ export const useStore = create<Store>()(
           rooms: rooms.filter((r) => r.id !== roomId),
           taskTemplates: taskTemplates.filter((t) => t.roomId !== roomId),
           completions: completions.filter((c) => !removedTaskIds.has(c.taskTemplateId)),
+          scheduledNotifications: nextScheduled,
+        });
+      },
+
+      addTask: (roomId, name, basePoints, expectedPeriodHours, cooldownHours) => {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        const task: TaskTemplate = {
+          id: generateId(),
+          roomId,
+          name: trimmed,
+          basePoints: Math.max(0, Math.round(basePoints) || 0),
+          expectedPeriodHours: Math.max(1, expectedPeriodHours || 24),
+          cooldownHours: Math.max(0, cooldownHours || 0),
+          isInvisibleLabor: false,
+        };
+        set({ taskTemplates: [...get().taskTemplates, task] });
+      },
+
+      updateTask: (taskId, patch) => {
+        set({
+          taskTemplates: get().taskTemplates.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  ...patch,
+                  name: patch.name?.trim() ? patch.name.trim() : t.name,
+                  basePoints:
+                    patch.basePoints !== undefined
+                      ? Math.max(0, Math.round(patch.basePoints))
+                      : t.basePoints,
+                  expectedPeriodHours:
+                    patch.expectedPeriodHours !== undefined
+                      ? Math.max(1, patch.expectedPeriodHours)
+                      : t.expectedPeriodHours,
+                  cooldownHours:
+                    patch.cooldownHours !== undefined
+                      ? Math.max(0, patch.cooldownHours)
+                      : t.cooldownHours,
+                }
+              : t
+          ),
+        });
+      },
+
+      removeTask: async (taskId: string) => {
+        const { taskTemplates, completions, scheduledNotifications } = get();
+        await cancelNotification(scheduledNotifications[taskId]);
+        const nextScheduled = { ...scheduledNotifications };
+        delete nextScheduled[taskId];
+
+        set({
+          taskTemplates: taskTemplates.filter((t) => t.id !== taskId),
+          completions: completions.filter((c) => c.taskTemplateId !== taskId),
           scheduledNotifications: nextScheduled,
         });
       },
