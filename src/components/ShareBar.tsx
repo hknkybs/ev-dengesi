@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MemberScore } from '../lib/scoring';
 import { colors, radius, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 
 export function ShareBar({ scores }: { scores: MemberScore[] }) {
   const total = scores.reduce((s, m) => s + m.points, 0);
@@ -40,10 +41,11 @@ export function ShareBar({ scores }: { scores: MemberScore[] }) {
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    height: 14,
+    height: 16,
     borderRadius: radius.pill,
     overflow: 'hidden',
     marginBottom: spacing.md,
+    backgroundColor: colors.surfaceMuted,
   },
   segment: {
     height: '100%',
@@ -66,6 +68,6 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 13,
     color: colors.text,
-    fontWeight: '500',
+    fontFamily: fonts.bodySemiBold,
   },
 });

@@ -11,9 +11,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { MemberAvatar } from '../components/MemberAvatar';
-import { colors, radius, spacing } from '../theme';
+import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 
 export function SettingsScreen() {
   const household = useStore((s) => s.household);
@@ -57,24 +60,30 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Ayarlar</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{household.name}</Text>
+        <LinearGradient
+          colors={gradients.heroDark}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.inviteCard}
+        >
+          <Text style={styles.inviteLabel}>{household.name}</Text>
           <View style={styles.inviteRow}>
             <Text style={styles.inviteCode}>{household.inviteCode}</Text>
-            <TouchableOpacity style={styles.shareButton} onPress={handleShareInvite}>
+            <TouchableOpacity style={styles.shareButton} onPress={handleShareInvite} activeOpacity={0.85}>
+              <Ionicons name="share-social" size={15} color={colors.primary} />
               <Text style={styles.shareButtonText}>Davet Et</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </LinearGradient>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Hane üyeleri</Text>
           {members.map((m) => (
             <View key={m.id} style={styles.memberRow}>
-              <MemberAvatar member={m} size={28} />
+              <MemberAvatar member={m} size={30} />
               <Text style={styles.memberName}>{m.displayName}</Text>
               {members.length > 1 && (
                 <TouchableOpacity onPress={() => removeMember(m.id)}>
@@ -92,8 +101,8 @@ export function SettingsScreen() {
               onChangeText={setNewMemberName}
               onSubmitEditing={handleAddMember}
             />
-            <TouchableOpacity style={styles.addButton} onPress={handleAddMember}>
-              <Text style={styles.addButtonText}>Ekle</Text>
+            <TouchableOpacity style={styles.addButton} onPress={handleAddMember} activeOpacity={0.85}>
+              <Ionicons name="add" size={20} color={colors.textOnDark} />
             </TouchableOpacity>
           </View>
           <Text style={styles.hint}>
@@ -111,7 +120,13 @@ export function SettingsScreen() {
                 household.mode === 'collaborative' && styles.modeButtonActive,
               ]}
               onPress={() => setHouseholdMode('collaborative')}
+              activeOpacity={0.85}
             >
+              <Ionicons
+                name="people"
+                size={15}
+                color={household.mode === 'collaborative' ? colors.primary : colors.textMuted}
+              />
               <Text
                 style={[
                   styles.modeButtonText,
@@ -127,7 +142,13 @@ export function SettingsScreen() {
                 household.mode === 'competitive' && styles.modeButtonActive,
               ]}
               onPress={() => setHouseholdMode('competitive')}
+              activeOpacity={0.85}
             >
+              <Ionicons
+                name="trophy"
+                size={15}
+                color={household.mode === 'competitive' ? colors.primary : colors.textMuted}
+              />
               <Text
                 style={[
                   styles.modeButtonText,
@@ -146,11 +167,17 @@ export function SettingsScreen() {
               <Text style={styles.cardTitle}>Bayatlama bildirimleri</Text>
               <Text style={styles.hint}>Bir görev süresi geçince hatırlatma al.</Text>
             </View>
-            <Switch value={notificationsEnabled} onValueChange={toggleNotifications} />
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={toggleNotifications}
+              trackColor={{ false: colors.surfaceMuted, true: colors.primaryLight }}
+              thumbColor={colors.surface}
+            />
           </View>
         </View>
 
-        <TouchableOpacity style={styles.dangerButton} onPress={handleReset}>
+        <TouchableOpacity style={styles.dangerButton} onPress={handleReset} activeOpacity={0.85}>
+          <Ionicons name="trash-outline" size={16} color={colors.danger} />
           <Text style={styles.dangerButtonText}>Haneyi Sil</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -161,33 +188,42 @@ export function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl },
-  title: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: spacing.lg },
+  title: { fontSize: 26, fontFamily: fonts.displayBold, color: colors.text, marginBottom: spacing.md },
+  inviteCard: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadow.floating,
+  },
+  inviteLabel: { fontSize: 13, fontFamily: fonts.bodyMedium, color: colors.textOnDarkMuted, marginBottom: spacing.xs },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
+    ...shadow.card,
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+  cardTitle: { fontSize: 15, fontFamily: fonts.bodyBold, color: colors.text, marginBottom: spacing.sm },
   inviteRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  inviteCode: { fontSize: 22, fontWeight: '800', letterSpacing: 4, color: colors.primary },
+  inviteCode: { fontSize: 26, fontFamily: fonts.displayExtraBold, letterSpacing: 5, color: colors.textOnDark },
   shareButton: {
-    backgroundColor: colors.primaryMuted,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.textOnDark,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
   },
-  shareButtonText: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+  shareButtonText: { color: colors.primary, fontFamily: fonts.bodyBold, fontSize: 13 },
   memberRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  memberName: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '500' },
-  removeText: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+  memberName: { flex: 1, fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
+  removeText: { color: colors.danger, fontSize: 13, fontFamily: fonts.bodyBold },
   addRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   input: {
     flex: 1,
@@ -198,35 +234,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 10,
     color: colors.text,
+    fontFamily: fonts.bodyMedium,
   },
   addButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  addButtonText: { color: '#fff', fontWeight: '700' },
-  hint: { fontSize: 11, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 16 },
+  hint: { fontSize: 11, fontFamily: fonts.body, color: colors.textMuted, marginTop: spacing.sm, lineHeight: 16 },
   modeRow: { flexDirection: 'row', gap: spacing.sm },
   modeButton: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
     paddingVertical: 10,
-    alignItems: 'center',
   },
   modeButtonActive: { backgroundColor: colors.primaryMuted, borderColor: colors.primary },
-  modeButtonText: { color: colors.textMuted, fontWeight: '600', fontSize: 13 },
+  modeButtonText: { color: colors.textMuted, fontFamily: fonts.bodySemiBold, fontSize: 13 },
   modeButtonTextActive: { color: colors.primary },
   switchRow: { flexDirection: 'row', alignItems: 'center' },
   dangerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     borderWidth: 1,
     borderColor: colors.danger,
+    backgroundColor: colors.dangerMuted,
     borderRadius: radius.md,
     paddingVertical: 12,
-    alignItems: 'center',
     marginTop: spacing.sm,
   },
-  dangerButtonText: { color: colors.danger, fontWeight: '700' },
+  dangerButtonText: { color: colors.danger, fontFamily: fonts.bodyBold },
 });

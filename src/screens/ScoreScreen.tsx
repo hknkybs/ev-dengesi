@@ -1,10 +1,13 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { currentYearMonth, getCategoryBreakdown, getMonthlyScores } from '../lib/scoring';
 import { ShareBar } from '../components/ShareBar';
-import { colors, radius, spacing } from '../theme';
+import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 
 const MONTH_NAMES = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
@@ -25,21 +28,37 @@ export function ScoreScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Text style={styles.eyebrow}>{MONTH_NAMES[now.getMonth()]} {now.getFullYear()}</Text>
         <Text style={styles.title}>Bu Ay</Text>
-        <Text style={styles.subtitle}>
-          {MONTH_NAMES[now.getMonth()]} {now.getFullYear()}
-        </Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Pay dağılımı</Text>
-          <Text style={styles.cardHint}>
+        <LinearGradient
+          colors={gradients.heroDark}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroHeaderRow}>
+            <Text style={styles.heroCardTitle}>Pay dağılımı</Text>
+            <View style={styles.modePill}>
+              <Ionicons
+                name={isCompetitive ? 'trophy' : 'people'}
+                size={13}
+                color={colors.textOnDark}
+              />
+              <Text style={styles.modePillText}>
+                {isCompetitive ? 'Rekabetçi' : 'İşbirlikçi'}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.heroCardHint}>
             {isCompetitive
               ? 'Bu hanede rekabetçi mod açık.'
-              : 'Bu hanede işbirlikçi mod açık — amaç sıralama değil, ortak paylaşım.'}
+              : 'Amaç sıralama değil, ortak paylaşım.'}
           </Text>
+          <View style={styles.heroDivider} />
           <ShareBar scores={scores} />
-        </View>
+        </LinearGradient>
 
         {scores.map((score) => {
           const breakdown = getCategoryBreakdown(
@@ -83,26 +102,49 @@ export function ScoreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl },
-  title: { fontSize: 24, fontWeight: '800', color: colors.text },
-  subtitle: { fontSize: 13, color: colors.textMuted, marginBottom: spacing.lg },
+  eyebrow: {
+    fontSize: 12,
+    fontFamily: fonts.bodyBold,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  title: { fontSize: 26, fontFamily: fonts.displayBold, color: colors.text, marginBottom: spacing.md },
+  heroCard: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadow.floating,
+  },
+  heroHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heroCardTitle: { fontSize: 17, fontFamily: fonts.display, color: colors.textOnDark },
+  modePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  modePillText: { fontSize: 11, fontFamily: fonts.bodyBold, color: colors.textOnDark },
+  heroCardHint: { fontSize: 12, fontFamily: fonts.body, color: colors.textOnDarkMuted, marginTop: 4 },
+  heroDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.14)', marginVertical: spacing.md },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
+    ...shadow.card,
   },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 2 },
-  cardHint: { fontSize: 12, color: colors.textMuted, marginBottom: spacing.md },
   memberHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   memberDot: { width: 10, height: 10, borderRadius: 5 },
-  memberName: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.text },
-  memberPoints: { fontSize: 14, fontWeight: '700', color: colors.primary },
-  memberMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2, marginBottom: spacing.sm },
+  memberName: { flex: 1, fontSize: 15, fontFamily: fonts.bodyBold, color: colors.text },
+  memberPoints: { fontSize: 14, fontFamily: fonts.bodyExtraBold, color: colors.primary },
+  memberMeta: { fontSize: 12, fontFamily: fonts.body, color: colors.textMuted, marginTop: 2, marginBottom: spacing.sm },
   breakdownList: { gap: 6 },
   breakdownRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  breakdownRoom: { fontSize: 13, color: colors.text },
-  breakdownPoints: { fontSize: 13, color: colors.textMuted },
-  emptyText: { fontSize: 12, color: colors.textMuted },
+  breakdownRoom: { fontSize: 13, fontFamily: fonts.bodyMedium, color: colors.text },
+  breakdownPoints: { fontSize: 13, fontFamily: fonts.body, color: colors.textMuted },
+  emptyText: { fontSize: 12, fontFamily: fonts.body, color: colors.textMuted },
 });

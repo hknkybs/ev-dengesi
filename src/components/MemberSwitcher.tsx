@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useStore } from '../state/store';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, shadow, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 import { MemberAvatar } from './MemberAvatar';
 
 export function MemberSwitcher() {
@@ -47,6 +48,7 @@ const styles = StyleSheet.create({
   label: {
     color: colors.textMuted,
     fontSize: 13,
+    fontFamily: fonts.bodyMedium,
   },
   chip: {
     flexDirection: 'row',
@@ -61,15 +63,16 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   chipActive: {
-    backgroundColor: colors.primaryMuted,
+    backgroundColor: colors.primary,
     borderColor: colors.primary,
+    ...shadow.soft,
   },
   chipText: {
     color: colors.textMuted,
     fontSize: 13,
-    fontWeight: '500',
+    fontFamily: fonts.bodySemiBold,
   },
   chipTextActive: {
-    color: colors.primary,
+    color: colors.textOnDark,
   },
 });

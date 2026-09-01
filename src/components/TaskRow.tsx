@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { TaskTemplate } from '../types';
-import { colors, radius, spacing } from '../theme';
+import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 
 function formatRelative(timestamp: number | null): string {
   if (!timestamp) return 'Henüz işaretlenmedi';
@@ -38,9 +40,16 @@ export function TaskRow({
           <Text style={styles.cooldownNote}>Yakın zamanda puanlandı — şimdi puansız kaydedilir</Text>
         )}
       </View>
-      <TouchableOpacity style={styles.button} onPress={onComplete} activeOpacity={0.75}>
-        <Text style={styles.buttonPoints}>+{task.basePoints}</Text>
-        <Text style={styles.buttonLabel}>Yaptım</Text>
+      <TouchableOpacity onPress={onComplete} activeOpacity={0.85}>
+        <LinearGradient
+          colors={gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.button}
+        >
+          <Text style={styles.buttonPoints}>+{task.basePoints}</Text>
+          <Text style={styles.buttonLabel}>Yaptım</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
@@ -51,11 +60,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    ...shadow.card,
   },
   info: {
     flex: 1,
@@ -63,35 +71,37 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: fonts.bodyBold,
     color: colors.text,
     marginBottom: 2,
   },
   meta: {
     fontSize: 12,
+    fontFamily: fonts.body,
     color: colors.textMuted,
   },
   cooldownNote: {
     fontSize: 11,
+    fontFamily: fonts.bodyMedium,
     color: colors.accent,
     marginTop: 4,
   },
   button: {
-    backgroundColor: colors.primary,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     alignItems: 'center',
-    minWidth: 72,
+    minWidth: 76,
+    ...shadow.floating,
   },
   buttonPoints: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 13,
+    color: colors.textOnDark,
+    fontFamily: fonts.bodyExtraBold,
+    fontSize: 14,
   },
   buttonLabel: {
-    color: '#fff',
+    color: colors.textOnDarkMuted,
+    fontFamily: fonts.bodyMedium,
     fontSize: 11,
-    opacity: 0.9,
   },
 });

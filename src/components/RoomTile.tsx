@@ -1,8 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Room } from '../types';
 import { StaleBucket } from '../lib/scoring';
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, shadow, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 
 const bucketColor: Record<StaleBucket, string> = {
   fresh: colors.staleFresh,
@@ -10,6 +12,14 @@ const bucketColor: Record<StaleBucket, string> = {
   warn: colors.staleWarn,
   overdue: colors.staleOverdue,
   critical: colors.staleCritical,
+};
+
+const bucketGradient: Record<StaleBucket, readonly [string, string]> = {
+  fresh: ['#4FBE8E', '#2E9068'],
+  ok: ['#A3D164', '#7BA83B'],
+  warn: ['#F0C15C', '#DB9B2C'],
+  overdue: ['#EF9663', '#D2632D'],
+  critical: ['#DD6E62', '#B33B30'],
 };
 
 const bucketLabel: Record<StaleBucket, string> = {
@@ -33,19 +43,25 @@ export function RoomTile({
 }) {
   const dot = bucketColor[bucket];
   return (
-    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.8}>
-      <View style={[styles.statusBar, { backgroundColor: dot }]} />
+    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.82}>
+      <View style={styles.topRow}>
+        <LinearGradient
+          colors={bucketGradient[bucket]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.iconBadge}
+        >
+          <Text style={styles.icon}>{room.icon}</Text>
+        </LinearGradient>
+        <View style={[styles.dot, { backgroundColor: dot }]} />
+      </View>
       <View style={styles.body}>
-        <Text style={styles.icon}>{room.icon}</Text>
         <Text style={styles.name} numberOfLines={1}>
           {room.name}
         </Text>
-        <View style={styles.statusRow}>
-          <View style={[styles.dot, { backgroundColor: dot }]} />
-          <Text style={styles.statusText} numberOfLines={1}>
-            {bucketLabel[bucket]}
-          </Text>
-        </View>
+        <Text style={[styles.statusText, { color: dot }]} numberOfLines={1}>
+          {bucketLabel[bucket]}
+        </Text>
         <Text style={styles.subtitle} numberOfLines={1}>
           {subtitle}
         </Text>
@@ -58,47 +74,48 @@ const styles = StyleSheet.create({
   tile: {
     width: '47%',
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  statusBar: {
-    height: 5,
-    width: '100%',
-  },
-  body: {
+    borderRadius: radius.lg,
     padding: spacing.md,
+    marginBottom: spacing.md,
+    ...shadow.card,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  iconBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   icon: {
-    fontSize: 26,
-    marginBottom: 6,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 6,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
+    fontSize: 24,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    marginTop: 4,
+  },
+  body: {},
+  name: {
+    fontSize: 16,
+    fontFamily: fonts.display,
+    color: colors.text,
+    marginBottom: 4,
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: colors.textMuted,
+    fontFamily: fonts.bodyBold,
+    marginBottom: 3,
   },
   subtitle: {
     fontSize: 12,
+    fontFamily: fonts.body,
     color: colors.textMuted,
   },
 });

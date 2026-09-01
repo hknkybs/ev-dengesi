@@ -2,10 +2,12 @@ import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { getLastCompletion, isWithinCooldown } from '../lib/scoring';
 import { TaskRow } from '../components/TaskRow';
 import { colors, radius, spacing } from '../theme';
+import { fonts } from '../theme/typography';
 import { HomeStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'RoomDetail'>;
@@ -33,12 +35,15 @@ export function RoomDetailScreen({ route, navigation }: Props) {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.backButtonText}>‹ Geri</Text>
+          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Text style={styles.backButtonText}>Geri</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.icon}>{room.icon}</Text>
+          <View style={styles.iconBadge}>
+            <Text style={styles.icon}>{room.icon}</Text>
+          </View>
           <Text style={styles.title}>{room.name}</Text>
         </View>
 
@@ -82,14 +87,25 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
   },
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.pill,
   },
-  backButtonText: { color: colors.primary, fontSize: 16, fontWeight: '600' },
+  backButtonText: { color: colors.primary, fontSize: 15, fontFamily: fonts.bodyBold, marginLeft: 2 },
   scroll: { padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl },
   header: { alignItems: 'center', marginBottom: spacing.lg },
-  icon: { fontSize: 40, marginBottom: spacing.xs },
-  title: { fontSize: 22, fontWeight: '800', color: colors.text },
-  warning: { color: colors.accent, textAlign: 'center', marginTop: spacing.md, fontSize: 13 },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  icon: { fontSize: 34 },
+  title: { fontSize: 22, fontFamily: fonts.displayBold, color: colors.text },
+  warning: { color: colors.accent, textAlign: 'center', marginTop: spacing.md, fontSize: 13, fontFamily: fonts.bodyMedium },
 });
