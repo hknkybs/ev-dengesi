@@ -1,5 +1,7 @@
 export type HouseholdType = 'couple' | 'roommates' | 'family';
 
+export type ThemeMode = 'system' | 'light' | 'dark';
+
 export type HouseholdMode = 'collaborative' | 'competitive';
 
 export type TemplateKey = '1+1' | '2+1' | '3+1' | 'ogrenci-evi' | 'mustakil';
@@ -58,4 +60,5 @@ export interface AppState {
   activeMemberId: string | null;
   notificationsEnabled: boolean;
   scheduledNotifications: Record<string, string>;
+  themeMode: ThemeMode;
 }

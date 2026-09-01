@@ -1,18 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Room } from '../types';
 import { StaleBucket } from '../lib/scoring';
-import { colors, radius, shadow, spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
+import { radius, shadow, spacing } from '../theme';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
-
-const bucketColor: Record<StaleBucket, string> = {
-  fresh: colors.staleFresh,
-  ok: colors.staleOk,
-  warn: colors.staleWarn,
-  overdue: colors.staleOverdue,
-  critical: colors.staleCritical,
-};
 
 const bucketGradient: Record<StaleBucket, readonly [string, string]> = {
   fresh: ['#4FBE8E', '#2E9068'],
@@ -41,7 +35,20 @@ export function RoomTile({
   subtitle: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const bucketColor: Record<StaleBucket, string> = useMemo(
+    () => ({
+      fresh: colors.staleFresh,
+      ok: colors.staleOk,
+      warn: colors.staleWarn,
+      overdue: colors.staleOverdue,
+      critical: colors.staleCritical,
+    }),
+    [colors]
+  );
   const dot = bucketColor[bucket];
+
   return (
     <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.82}>
       <View style={styles.topRow}>
@@ -70,52 +77,56 @@ export function RoomTile({
   );
 }
 
-const styles = StyleSheet.create({
-  tile: {
-    width: '47%',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...shadow.card,
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  iconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: {
-    fontSize: 24,
-  },
-  dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    marginTop: 4,
-  },
-  body: {},
-  name: {
-    fontSize: 16,
-    fontFamily: fonts.display,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: fonts.bodyBold,
-    marginBottom: 3,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontFamily: fonts.body,
-    color: colors.textMuted,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    tile: {
+      width: '47%',
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadow.card,
+    },
+    topRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginBottom: spacing.sm,
+    },
+    iconBadge: {
+      width: 48,
+      height: 48,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    icon: {
+      fontSize: 24,
+    },
+    dot: {
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      marginTop: 4,
+    },
+    body: {},
+    name: {
+      fontSize: 16,
+      fontFamily: fonts.display,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    statusText: {
+      fontSize: 12,
+      fontFamily: fonts.bodyBold,
+      marginBottom: 3,
+    },
+    subtitle: {
+      fontSize: 12,
+      fontFamily: fonts.body,
+      color: colors.textMuted,
+    },
+  });
+}

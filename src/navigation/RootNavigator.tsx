@@ -1,18 +1,20 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
+import { useTheme } from '../theme/ThemeContext';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { HomeMapScreen } from '../screens/HomeMapScreen';
 import { RoomDetailScreen } from '../screens/RoomDetailScreen';
 import { ScoreScreen } from '../screens/ScoreScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { HomeStackParamList, RootTabParamList } from './types';
-import { colors, radius, spacing } from '../theme';
+import { radius } from '../theme';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -39,8 +41,17 @@ function HomeStackNavigator() {
   );
 }
 
-function TabIcon({ name, focused }: { name: keyof RootTabParamList; focused: boolean }) {
+function TabIcon({
+  name,
+  focused,
+  colors,
+}: {
+  name: keyof RootTabParamList;
+  focused: boolean;
+  colors: ThemeColors;
+}) {
   const icon = focused ? TAB_ICONS[name] : TAB_ICONS_OUTLINE[name];
+  const styles = createIconStyles(colors);
   return (
     <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
       <Ionicons name={icon} size={19} color={focused ? colors.textOnDark : colors.textMuted} />
@@ -50,6 +61,7 @@ function TabIcon({ name, focused }: { name: keyof RootTabParamList; focused: boo
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   return (
     <Tab.Navigator
@@ -67,7 +79,7 @@ function MainTabs() {
         },
         tabBarLabelStyle: { fontFamily: fonts.bodySemiBold, fontSize: 11, marginTop: 2 },
         tabBarIcon: ({ focused }) => (
-          <TabIcon name={route.name as keyof RootTabParamList} focused={focused} />
+          <TabIcon name={route.name as keyof RootTabParamList} focused={focused} colors={colors} />
         ),
       })}
     >
@@ -80,23 +92,38 @@ function MainTabs() {
 
 export function RootNavigator() {
   const household = useStore((s) => s.household);
+  const { colors, isDark } = useTheme();
+
+  const navTheme: Theme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+    },
+  };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       {household ? <MainTabs /> : <OnboardingScreen />}
     </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  iconWrap: {
-    width: 38,
-    height: 30,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapActive: {
-    backgroundColor: colors.primary,
-  },
-});
+function createIconStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    iconWrap: {
+      width: 38,
+      height: 30,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconWrapActive: {
+      backgroundColor: colors.primary,
+    },
+  });
+}

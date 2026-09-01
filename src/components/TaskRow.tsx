@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TaskTemplate } from '../types';
-import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
+import { radius, spacing } from '../theme';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
 
 function formatRelative(timestamp: number | null): string {
@@ -27,6 +29,9 @@ export function TaskRow({
   cooldownActive: boolean;
   onComplete: () => void;
 }) {
+  const { colors, gradients, shadow } = useTheme();
+  const styles = useMemo(() => createStyles(colors, shadow), [colors, shadow]);
+
   return (
     <View style={styles.row}>
       <View style={styles.info}>
@@ -55,53 +60,57 @@ export function TaskRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadow.card,
-  },
-  info: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  name: {
-    fontSize: 15,
-    fontFamily: fonts.bodyBold,
-    color: colors.text,
-    marginBottom: 2,
-  },
-  meta: {
-    fontSize: 12,
-    fontFamily: fonts.body,
-    color: colors.textMuted,
-  },
-  cooldownNote: {
-    fontSize: 11,
-    fontFamily: fonts.bodyMedium,
-    color: colors.accent,
-    marginTop: 4,
-  },
-  button: {
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    minWidth: 76,
-    ...shadow.floating,
-  },
-  buttonPoints: {
-    color: colors.textOnDark,
-    fontFamily: fonts.bodyExtraBold,
-    fontSize: 14,
-  },
-  buttonLabel: {
-    color: colors.textOnDarkMuted,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 11,
-  },
-});
+function createStyles(colors: ThemeColors, shadow: { card: object; floating: object }) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadow.card,
+    },
+    info: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    name: {
+      fontSize: 15,
+      fontFamily: fonts.bodyBold,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    meta: {
+      fontSize: 12,
+      fontFamily: fonts.body,
+      color: colors.textMuted,
+    },
+    cooldownNote: {
+      fontSize: 11,
+      fontFamily: fonts.bodyMedium,
+      color: colors.accent,
+      marginTop: 4,
+    },
+    button: {
+      borderRadius: radius.pill,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      minWidth: 76,
+      ...shadow.floating,
+    },
+    buttonPoints: {
+      color: colors.textOnDark,
+      fontFamily: fonts.bodyExtraBold,
+      fontSize: 14,
+    },
+    buttonLabel: {
+      color: colors.textOnDarkMuted,
+      fontFamily: fonts.bodyMedium,
+      fontSize: 11,
+    },
+  });
+}

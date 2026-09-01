@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { HouseholdType, TemplateKey } from '../types';
 import { TEMPLATE_LABELS } from '../data/roomTemplates';
-import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { radius, spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
 
 const TYPE_OPTIONS: {
@@ -51,6 +53,8 @@ export function OnboardingScreen() {
   const [ownerName, setOwnerName] = useState('');
   const [type, setType] = useState<HouseholdType>('couple');
   const [template, setTemplate] = useState<TemplateKey>('2+1');
+  const { colors, gradients, shadow } = useTheme();
+  const styles = useMemo(() => createStyles(colors, shadow), [colors, shadow]);
 
   const canContinueStep0 = householdName.trim().length > 0 && ownerName.trim().length > 0;
 
@@ -201,7 +205,8 @@ export function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors, shadow: { soft: object; floating: object }) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   hero: {
     paddingHorizontal: spacing.lg,
@@ -303,4 +308,5 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: colors.textOnDark, fontFamily: fonts.bodyBold, fontSize: 15 },
   secondaryButton: { alignItems: 'center', paddingVertical: spacing.md },
   secondaryButtonText: { color: colors.textMuted, fontFamily: fonts.bodySemiBold },
-});
+  });
+}

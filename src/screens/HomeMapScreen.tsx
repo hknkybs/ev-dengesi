@@ -6,7 +6,9 @@ import { useStore } from '../state/store';
 import { getLastCompletion, getRoomStaleness } from '../lib/scoring';
 import { RoomTile } from '../components/RoomTile';
 import { MemberSwitcher } from '../components/MemberSwitcher';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
 import { HomeStackParamList } from '../navigation/types';
 
@@ -26,6 +28,8 @@ export function HomeMapScreen({ navigation }: Props) {
   const taskTemplates = useStore((s) => s.taskTemplates);
   const completions = useStore((s) => s.completions);
   const members = useStore((s) => s.members);
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const roomStaleness = useMemo(
     () => rooms.map((room) => ({ room, ...getRoomStaleness(room, taskTemplates, completions) })),
@@ -106,7 +110,8 @@ export function HomeMapScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.md, paddingBottom: spacing.xl },
   header: { paddingHorizontal: spacing.sm, marginBottom: spacing.md },
@@ -149,4 +154,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     marginTop: spacing.xs,
   },
-});
+  });
+}

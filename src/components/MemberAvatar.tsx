@@ -1,9 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Member } from '../types';
-import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export function MemberAvatar({ member, size = 32 }: { member: Member; size?: number }) {
+  const { colors } = useTheme();
   return (
     <View
       style={[
@@ -14,6 +15,7 @@ export function MemberAvatar({ member, size = 32 }: { member: Member; size?: num
           borderRadius: size / 2,
           backgroundColor: member.color,
           borderWidth: Math.max(2, size * 0.06),
+          borderColor: colors.surface,
         },
       ]}
     >
@@ -26,6 +28,5 @@ const styles = StyleSheet.create({
   circle: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderColor: colors.surface,
   },
 });

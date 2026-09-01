@@ -15,8 +15,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { MemberAvatar } from '../components/MemberAvatar';
-import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { RoomEditRow } from '../components/RoomEditRow';
+import { useTheme } from '../theme/ThemeContext';
+import { radius, roomIconChoices, spacing } from '../theme';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
+import { ThemeMode } from '../types';
+
+const THEME_OPTIONS: { key: ThemeMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'system', label: 'Sistem', icon: 'phone-portrait-outline' },
+  { key: 'light', label: 'Açık', icon: 'sunny-outline' },
+  { key: 'dark', label: 'Koyu', icon: 'moon-outline' },
+];
 
 export function SettingsScreen() {
   const household = useStore((s) => s.household);
@@ -28,14 +38,44 @@ export function SettingsScreen() {
   const notificationsEnabled = useStore((s) => s.notificationsEnabled);
   const toggleNotifications = useStore((s) => s.toggleNotifications);
   const resetHousehold = useStore((s) => s.resetHousehold);
+  const rooms = useStore((s) => s.rooms);
+  const renameRoom = useStore((s) => s.renameRoom);
+  const addRoom = useStore((s) => s.addRoom);
+  const removeRoom = useStore((s) => s.removeRoom);
+  const themeMode = useStore((s) => s.themeMode);
+  const setThemeMode = useStore((s) => s.setThemeMode);
+
+  const { colors, gradients, shadow } = useTheme();
+  const styles = useMemo(() => createStyles(colors, shadow), [colors, shadow]);
 
   const [newMemberName, setNewMemberName] = useState('');
+  const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomIcon, setNewRoomIcon] = useState(roomIconChoices[0]);
 
   function handleAddMember() {
     const name = newMemberName.trim();
     if (!name) return;
     addMember(name);
     setNewMemberName('');
+  }
+
+  function handleAddRoom() {
+    const name = newRoomName.trim();
+    if (!name) return;
+    addRoom(name, newRoomIcon);
+    setNewRoomName('');
+    setNewRoomIcon(roomIconChoices[0]);
+  }
+
+  function handleRemoveRoom(roomId: string, roomName: string) {
+    Alert.alert(
+      `${roomName} silinsin mi?`,
+      'Bu odaya ait görevler ve geçmiş kayıtlar da silinecek.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        { text: 'Sil', style: 'destructive', onPress: () => removeRoom(roomId) },
+      ]
+    );
   }
 
   function handleShareInvite() {
@@ -80,6 +120,28 @@ export function SettingsScreen() {
         </LinearGradient>
 
         <View style={styles.card}>
+          <Text style={styles.cardTitle}>Görünüm</Text>
+          <View style={styles.modeRow}>
+            {THEME_OPTIONS.map((opt) => {
+              const active = themeMode === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[styles.modeButton, active && styles.modeButtonActive]}
+                  onPress={() => setThemeMode(opt.key)}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name={opt.icon} size={15} color={active ? colors.primary : colors.textMuted} />
+                  <Text style={[styles.modeButtonText, active && styles.modeButtonTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={styles.card}>
           <Text style={styles.cardTitle}>Hane üyeleri</Text>
           {members.map((m) => (
             <View key={m.id} style={styles.memberRow}>
@@ -109,6 +171,46 @@ export function SettingsScreen() {
             Gerçek davetler backend bağlanınca davet koduyla otomatik katılım şeklinde çalışır.
             Şimdilik demo için üyeleri buradan ekleyebilirsin.
           </Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Odalar</Text>
+          {rooms.map((room) => (
+            <RoomEditRow
+              key={room.id}
+              room={room}
+              onRename={renameRoom}
+              onRemove={handleRemoveRoom}
+            />
+          ))}
+
+          <Text style={[styles.hint, { marginTop: spacing.sm, marginBottom: spacing.xs }]}>
+            Yeni oda ekle
+          </Text>
+          <View style={styles.iconPickerRow}>
+            {roomIconChoices.map((icon) => (
+              <TouchableOpacity
+                key={icon}
+                style={[styles.iconChoice, newRoomIcon === icon && styles.iconChoiceActive]}
+                onPress={() => setNewRoomIcon(icon)}
+              >
+                <Text style={styles.iconChoiceText}>{icon}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.addRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="Örn. Çalışma Odası"
+              placeholderTextColor={colors.textMuted}
+              value={newRoomName}
+              onChangeText={setNewRoomName}
+              onSubmitEditing={handleAddRoom}
+            />
+            <TouchableOpacity style={styles.addButton} onPress={handleAddRoom} activeOpacity={0.85}>
+              <Ionicons name="add" size={20} color={colors.textOnDark} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -185,7 +287,8 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors, shadow: { card: object; floating: object }) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl },
   title: { fontSize: 26, fontFamily: fonts.displayBold, color: colors.text, marginBottom: spacing.md },
@@ -201,6 +304,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadow.card,
   },
   cardTitle: { fontSize: 15, fontFamily: fonts.bodyBold, color: colors.text, marginBottom: spacing.sm },
@@ -224,6 +329,19 @@ const styles = StyleSheet.create({
   },
   memberName: { flex: 1, fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
   removeText: { color: colors.danger, fontSize: 13, fontFamily: fonts.bodyBold },
+  iconPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  iconChoice: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  iconChoiceActive: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
+  iconChoiceText: { fontSize: 16 },
   addRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   input: {
     flex: 1,
@@ -273,4 +391,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   dangerButtonText: { color: colors.danger, fontFamily: fonts.bodyBold },
-});
+  });
+}

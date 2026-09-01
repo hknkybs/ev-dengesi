@@ -9,6 +9,7 @@ import {
   HouseholdType,
   Member,
   TemplateKey,
+  ThemeMode,
 } from '../types';
 import { generateId, generateInviteCode } from '../lib/id';
 import { ROOM_TEMPLATES } from '../data/roomTemplates';
@@ -34,6 +35,10 @@ interface Actions {
   toggleNotifications: (enabled: boolean) => void;
   completeTask: (taskTemplateId: string) => Promise<void>;
   resetHousehold: () => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  renameRoom: (roomId: string, name: string) => void;
+  addRoom: (name: string, icon: string) => void;
+  removeRoom: (roomId: string) => void;
 }
 
 type Store = AppState & Actions;
@@ -49,6 +54,7 @@ export const useStore = create<Store>()(
       activeMemberId: null,
       notificationsEnabled: false,
       scheduledNotifications: {},
+      themeMode: 'system',
 
       createHousehold: (name, type, templateKey, ownerName) => {
         const household: Household = {
@@ -203,6 +209,56 @@ export const useStore = create<Store>()(
           completions: [],
           activeMemberId: null,
           scheduledNotifications: {},
+        });
+      },
+
+      setThemeMode: (mode) => set({ themeMode: mode }),
+
+      renameRoom: (roomId, name) => {
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        set({
+          rooms: get().rooms.map((r) => (r.id === roomId ? { ...r, name: trimmed } : r)),
+        });
+      },
+
+      addRoom: (name, icon) => {
+        const { household, rooms, taskTemplates } = get();
+        const trimmed = name.trim();
+        if (!household || !trimmed) return;
+
+        const room = { id: generateId(), name: trimmed, icon };
+        const newTasks = getDefaultTasksForRoom(trimmed).map((seed) => ({
+          id: generateId(),
+          roomId: room.id,
+          name: seed.name,
+          basePoints: seed.basePoints,
+          expectedPeriodHours: seed.expectedPeriodHours,
+          cooldownHours: seed.cooldownHours,
+          isInvisibleLabor: seed.isInvisibleLabor,
+        }));
+
+        set({ rooms: [...rooms, room], taskTemplates: [...taskTemplates, ...newTasks] });
+      },
+
+      removeRoom: async (roomId: string) => {
+        const { rooms, taskTemplates, completions, scheduledNotifications } = get();
+        const removedTaskIds = new Set(
+          taskTemplates.filter((t) => t.roomId === roomId).map((t) => t.id)
+        );
+
+        await Promise.all(
+          Array.from(removedTaskIds).map((id) => cancelNotification(scheduledNotifications[id]))
+        );
+
+        const nextScheduled = { ...scheduledNotifications };
+        removedTaskIds.forEach((id) => delete nextScheduled[id]);
+
+        set({
+          rooms: rooms.filter((r) => r.id !== roomId),
+          taskTemplates: taskTemplates.filter((t) => t.roomId !== roomId),
+          completions: completions.filter((c) => !removedTaskIds.has(c.taskTemplateId)),
+          scheduledNotifications: nextScheduled,
         });
       },
     }),

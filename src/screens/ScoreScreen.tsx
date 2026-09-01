@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,7 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../state/store';
 import { currentYearMonth, getCategoryBreakdown, getMonthlyScores } from '../lib/scoring';
 import { ShareBar } from '../components/ShareBar';
-import { colors, gradients, radius, shadow, spacing } from '../theme';
+import { radius, spacing } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
+import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
 
 const MONTH_NAMES = [
@@ -20,6 +22,8 @@ export function ScoreScreen() {
   const completions = useStore((s) => s.completions);
   const rooms = useStore((s) => s.rooms);
   const taskTemplates = useStore((s) => s.taskTemplates);
+  const { colors, gradients, shadow } = useTheme();
+  const styles = useMemo(() => createStyles(colors, shadow), [colors, shadow]);
 
   const yearMonth = currentYearMonth();
   const now = new Date();
@@ -99,7 +103,8 @@ export function ScoreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors, shadow: { card: object; floating: object }) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl },
   eyebrow: {
@@ -147,4 +152,5 @@ const styles = StyleSheet.create({
   breakdownRoom: { fontSize: 13, fontFamily: fonts.bodyMedium, color: colors.text },
   breakdownPoints: { fontSize: 13, fontFamily: fonts.body, color: colors.textMuted },
   emptyText: { fontSize: 12, fontFamily: fonts.body, color: colors.textMuted },
-});
+  });
+}
