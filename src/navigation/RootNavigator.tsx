@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../state/store';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { HomeMapScreen } from '../screens/HomeMapScreen';
@@ -25,23 +26,27 @@ function HomeStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeMap" component={HomeMapScreen} />
-      <HomeStack.Screen
-        name="RoomDetail"
-        component={RoomDetailScreen}
-        options={{ headerShown: true, title: '' }}
-      />
+      <HomeStack.Screen name="RoomDetail" component={RoomDetailScreen} />
     </HomeStack.Navigator>
   );
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          height: 52 + insets.bottom,
+          paddingBottom: insets.bottom + 6,
+          paddingTop: 6,
+        },
         tabBarIcon: () => (
           <Text style={{ fontSize: 20 }}>{TAB_ICONS[route.name as keyof RootTabParamList]}</Text>
         ),

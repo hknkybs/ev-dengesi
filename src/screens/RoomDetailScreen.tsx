@@ -1,16 +1,16 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useStore } from '../state/store';
 import { getLastCompletion, isWithinCooldown } from '../lib/scoring';
 import { TaskRow } from '../components/TaskRow';
-import { colors, spacing } from '../theme';
+import { colors, radius, spacing } from '../theme';
 import { HomeStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'RoomDetail'>;
 
-export function RoomDetailScreen({ route }: Props) {
+export function RoomDetailScreen({ route, navigation }: Props) {
   const { roomId } = route.params;
   const room = useStore((s) => s.rooms.find((r) => r.id === roomId));
   const allTaskTemplates = useStore((s) => s.taskTemplates);
@@ -27,6 +27,15 @@ export function RoomDetailScreen({ route }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.backButtonText}>‹ Geri</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <Text style={styles.icon}>{room.icon}</Text>
@@ -65,7 +74,20 @@ export function RoomDetailScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xl },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  backButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.pill,
+  },
+  backButtonText: { color: colors.primary, fontSize: 16, fontWeight: '600' },
+  scroll: { padding: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xl },
   header: { alignItems: 'center', marginBottom: spacing.lg },
   icon: { fontSize: 40, marginBottom: spacing.xs },
   title: { fontSize: 22, fontWeight: '800', color: colors.text },
