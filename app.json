@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "bi-el-at",
-    "slug": "bi-el-at",
+    "name": "Ev Dengesi",
+    "slug": "ev-dengesi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#3E6B5C"
+        }
+      ]
+    ]
   }
 }
