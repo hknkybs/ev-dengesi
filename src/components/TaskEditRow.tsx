@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { TaskTemplate } from '../types';
+import { Member, TaskTemplate } from '../types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme';
 import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
+import { MemberAvatar } from './MemberAvatar';
 
 function toNumber(text: string, fallback: number): number {
   const n = Number(text.replace(',', '.'));
@@ -14,13 +15,17 @@ function toNumber(text: string, fallback: number): number {
 
 export function TaskEditRow({
   task,
+  members,
   onUpdate,
   onRemove,
 }: {
   task: TaskTemplate;
+  members: Member[];
   onUpdate: (
     taskId: string,
-    patch: Partial<Pick<TaskTemplate, 'name' | 'basePoints' | 'expectedPeriodHours' | 'cooldownHours'>>
+    patch: Partial<
+      Pick<TaskTemplate, 'name' | 'basePoints' | 'expectedPeriodHours' | 'cooldownHours' | 'assignedMemberId'>
+    >
   ) => void;
   onRemove: (taskId: string) => void;
 }) {
@@ -105,6 +110,33 @@ export function TaskEditRow({
           />
         </View>
       </View>
+
+      <Text style={styles.assignLabel}>Sorumlu</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <TouchableOpacity
+          style={[styles.assignChip, !task.assignedMemberId && styles.assignChipActive]}
+          onPress={() => onUpdate(task.id, { assignedMemberId: null })}
+        >
+          <Text style={[styles.assignChipText, !task.assignedMemberId && styles.assignChipTextActive]}>
+            Kimseye atanmadı
+          </Text>
+        </TouchableOpacity>
+        {members.map((m) => {
+          const active = task.assignedMemberId === m.id;
+          return (
+            <TouchableOpacity
+              key={m.id}
+              style={[styles.assignChip, active && styles.assignChipActive]}
+              onPress={() => onUpdate(task.id, { assignedMemberId: m.id })}
+            >
+              <MemberAvatar member={m} size={16} />
+              <Text style={[styles.assignChipText, active && styles.assignChipTextActive]}>
+                {m.displayName}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
@@ -145,5 +177,21 @@ function createStyles(colors: ThemeColors) {
       color: colors.text,
       textAlign: 'center',
     },
+    assignLabel: { fontSize: 10, fontFamily: fonts.bodyMedium, color: colors.textMuted, marginTop: spacing.sm, marginBottom: 4 },
+    assignChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 5,
+      borderRadius: radius.pill,
+      marginRight: spacing.xs,
+    },
+    assignChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    assignChipText: { fontSize: 11, fontFamily: fonts.bodySemiBold, color: colors.textMuted },
+    assignChipTextActive: { color: colors.textOnDark },
   });
 }

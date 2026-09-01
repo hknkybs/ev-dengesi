@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
-import { useStore } from '../state/store';
+import { usePrefsStore } from '../state/prefsStore';
 import { darkColors, gradients, lightColors, shadow, ThemeColors } from './palette';
 
 interface ThemeContextValue {
@@ -14,7 +14,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const themeMode = useStore((s) => s.themeMode);
+  const themeMode = usePrefsStore((s) => s.themeMode);
   const isDark = themeMode === 'system' ? systemScheme === 'dark' : themeMode === 'dark';
 
   const value = useMemo<ThemeContextValue>(

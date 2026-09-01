@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -46,20 +47,57 @@ const TEMPLATE_ICONS: Record<TemplateKey, keyof typeof Ionicons.glyphMap> = {
 
 const TEMPLATE_OPTIONS = Object.keys(TEMPLATE_LABELS) as TemplateKey[];
 
+function friendlyError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  if (message.includes('invite_code_not_found')) return 'Bu davet kodu bulunamadı. Kodu kontrol edip tekrar dene.';
+  return 'Bir şeyler ters gitti. İnternet bağlantını kontrol edip tekrar dene.';
+}
+
 export function OnboardingScreen() {
   const createHousehold = useStore((s) => s.createHousehold);
+  const joinHousehold = useStore((s) => s.joinHousehold);
+
+  const [mode, setMode] = useState<'create' | 'join'>('create');
   const [step, setStep] = useState(0);
   const [householdName, setHouseholdName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [type, setType] = useState<HouseholdType>('couple');
   const [template, setTemplate] = useState<TemplateKey>('2+1');
+  const [inviteCode, setInviteCode] = useState('');
+  const [joinName, setJoinName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const { colors, gradients, shadow } = useTheme();
   const styles = useMemo(() => createStyles(colors, shadow), [colors, shadow]);
 
   const canContinueStep0 = householdName.trim().length > 0 && ownerName.trim().length > 0;
+  const canJoin = inviteCode.trim().length > 0 && joinName.trim().length > 0;
 
-  function handleCreate() {
-    createHousehold(householdName.trim(), type, template, ownerName.trim());
+  async function handleCreate() {
+    if (submitting) return;
+    setSubmitting(true);
+    setErrorMessage(null);
+    try {
+      await createHousehold(householdName.trim(), type, template, ownerName.trim());
+    } catch (err) {
+      setErrorMessage(friendlyError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleJoin() {
+    if (submitting) return;
+    setSubmitting(true);
+    setErrorMessage(null);
+    try {
+      await joinHousehold(inviteCode.trim(), joinName.trim());
+    } catch (err) {
+      setErrorMessage(friendlyError(err));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -82,7 +120,80 @@ export function OnboardingScreen() {
       >
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.sheet}>
-            {step === 0 && (
+            <View style={styles.tabRow}>
+              <TouchableOpacity
+                style={[styles.tab, mode === 'create' && styles.tabActive]}
+                onPress={() => {
+                  setMode('create');
+                  setErrorMessage(null);
+                }}
+              >
+                <Text style={[styles.tabText, mode === 'create' && styles.tabTextActive]}>
+                  Haneyi Oluştur
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, mode === 'join' && styles.tabActive]}
+                onPress={() => {
+                  setMode('join');
+                  setErrorMessage(null);
+                }}
+              >
+                <Text style={[styles.tabText, mode === 'join' && styles.tabTextActive]}>
+                  Haneye Katıl
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+
+            {mode === 'join' && (
+              <View style={styles.section}>
+                <Text style={styles.label}>Davet kodu</Text>
+                <TextInput
+                  style={[styles.input, styles.inviteInput]}
+                  placeholder="ÖRN. A1B2C3"
+                  placeholderTextColor={colors.textMuted}
+                  value={inviteCode}
+                  onChangeText={(t) => setInviteCode(t.toUpperCase())}
+                  autoCapitalize="characters"
+                  maxLength={8}
+                />
+                <Text style={styles.label}>Senin adın</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Örn. Aleyna"
+                  placeholderTextColor={colors.textMuted}
+                  value={joinName}
+                  onChangeText={setJoinName}
+                />
+
+                <TouchableOpacity
+                  disabled={!canJoin || submitting}
+                  onPress={handleJoin}
+                  activeOpacity={0.88}
+                  style={(!canJoin || submitting) && styles.disabledButton}
+                >
+                  <LinearGradient
+                    colors={gradients.primary}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.primaryButton}
+                  >
+                    {submitting ? (
+                      <ActivityIndicator color={colors.textOnDark} />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryButtonText}>Haneye Katıl</Text>
+                        <Ionicons name="arrow-forward" size={18} color={colors.textOnDark} />
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {mode === 'create' && step === 0 && (
               <View style={styles.section}>
                 <Text style={styles.label}>Hanenin adı</Text>
                 <TextInput
@@ -150,7 +261,7 @@ export function OnboardingScreen() {
               </View>
             )}
 
-            {step === 1 && (
+            {mode === 'create' && step === 1 && (
               <View style={styles.section}>
                 <Text style={styles.label}>Ev planı</Text>
                 <Text style={styles.hintBlock}>
@@ -182,15 +293,26 @@ export function OnboardingScreen() {
                   );
                 })}
 
-                <TouchableOpacity onPress={handleCreate} activeOpacity={0.88}>
+                <TouchableOpacity
+                  onPress={handleCreate}
+                  activeOpacity={0.88}
+                  disabled={submitting}
+                  style={submitting && styles.disabledButton}
+                >
                   <LinearGradient
                     colors={gradients.primary}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.primaryButton}
                   >
-                    <Text style={styles.primaryButtonText}>Haneyi Oluştur</Text>
-                    <Ionicons name="sparkles" size={18} color={colors.textOnDark} />
+                    {submitting ? (
+                      <ActivityIndicator color={colors.textOnDark} />
+                    ) : (
+                      <>
+                        <Text style={styles.primaryButtonText}>Haneyi Oluştur</Text>
+                        <Ionicons name="sparkles" size={18} color={colors.textOnDark} />
+                      </>
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(0)}>
@@ -244,6 +366,23 @@ function createStyles(colors: ThemeColors, shadow: { soft: object; floating: obj
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    padding: 4,
+    marginBottom: spacing.md,
+  },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: radius.pill, alignItems: 'center' },
+  tabActive: { backgroundColor: colors.surface, ...shadow.soft },
+  tabText: { fontSize: 13, fontFamily: fonts.bodySemiBold, color: colors.textMuted },
+  tabTextActive: { color: colors.primary },
+  errorText: {
+    fontSize: 12,
+    fontFamily: fonts.bodyMedium,
+    color: colors.danger,
+    marginBottom: spacing.sm,
+  },
   section: { gap: spacing.xs },
   label: {
     fontSize: 13,
@@ -266,6 +405,7 @@ function createStyles(colors: ThemeColors, shadow: { soft: object; floating: obj
     marginBottom: spacing.sm,
     ...shadow.soft,
   },
+  inviteInput: { fontFamily: fonts.displayBold, letterSpacing: 3, textAlign: 'center', fontSize: 18 },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -302,6 +442,7 @@ function createStyles(colors: ThemeColors, shadow: { soft: object; floating: obj
     justifyContent: 'center',
     gap: spacing.xs,
     marginTop: spacing.lg,
+    minHeight: 50,
     ...shadow.floating,
   },
   disabledButton: { opacity: 0.45 },

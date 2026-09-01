@@ -13,7 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useStore } from '../state/store';
+import { useCurrentMember, useStore } from '../state/store';
+import { usePrefsStore } from '../state/prefsStore';
 import { MemberAvatar } from '../components/MemberAvatar';
 import { RoomEditRow } from '../components/RoomEditRow';
 import { useTheme } from '../theme/ThemeContext';
@@ -32,32 +33,25 @@ export function SettingsScreen() {
   const household = useStore((s) => s.household);
   const allMembers = useStore((s) => s.members);
   const members = useMemo(() => allMembers.filter((m) => !m.leftAt), [allMembers]);
-  const addMember = useStore((s) => s.addMember);
-  const removeMember = useStore((s) => s.removeMember);
+  const currentMember = useCurrentMember();
   const setHouseholdMode = useStore((s) => s.setHouseholdMode);
-  const notificationsEnabled = useStore((s) => s.notificationsEnabled);
-  const toggleNotifications = useStore((s) => s.toggleNotifications);
-  const resetHousehold = useStore((s) => s.resetHousehold);
+  const leaveHousehold = useStore((s) => s.leaveHousehold);
+  const registerPushToken = useStore((s) => s.registerPushToken);
   const rooms = useStore((s) => s.rooms);
   const renameRoom = useStore((s) => s.renameRoom);
   const addRoom = useStore((s) => s.addRoom);
   const removeRoom = useStore((s) => s.removeRoom);
-  const themeMode = useStore((s) => s.themeMode);
-  const setThemeMode = useStore((s) => s.setThemeMode);
+
+  const notificationsEnabled = usePrefsStore((s) => s.notificationsEnabled);
+  const toggleNotifications = usePrefsStore((s) => s.toggleNotifications);
+  const themeMode = usePrefsStore((s) => s.themeMode);
+  const setThemeMode = usePrefsStore((s) => s.setThemeMode);
 
   const { colors, gradients, shadow } = useTheme();
   const styles = useMemo(() => createStyles(colors, shadow), [colors, shadow]);
 
-  const [newMemberName, setNewMemberName] = useState('');
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomIcon, setNewRoomIcon] = useState(roomIconChoices[0]);
-
-  function handleAddMember() {
-    const name = newMemberName.trim();
-    if (!name) return;
-    addMember(name);
-    setNewMemberName('');
-  }
 
   function handleAddRoom() {
     const name = newRoomName.trim();
@@ -85,13 +79,13 @@ export function SettingsScreen() {
     });
   }
 
-  function handleReset() {
+  function handleLeave() {
     Alert.alert(
-      'Haneyi sil',
-      'Tüm oda, görev ve puan verileri silinecek. Bu geri alınamaz.',
+      'Haneden ayrıl',
+      'Bu hanenin verilerine artık bu cihazdan erişemeyeceksin. Diğer üyelerin verisi etkilenmez.',
       [
         { text: 'Vazgeç', style: 'cancel' },
-        { text: 'Sil', style: 'destructive', onPress: resetHousehold },
+        { text: 'Ayrıl', style: 'destructive', onPress: () => leaveHousehold() },
       ]
     );
   }
@@ -147,29 +141,15 @@ export function SettingsScreen() {
             <View key={m.id} style={styles.memberRow}>
               <MemberAvatar member={m} size={30} />
               <Text style={styles.memberName}>{m.displayName}</Text>
-              {members.length > 1 && (
-                <TouchableOpacity onPress={() => removeMember(m.id)}>
-                  <Text style={styles.removeText}>Ayrıl</Text>
-                </TouchableOpacity>
+              {m.id === currentMember?.id && (
+                <View style={styles.youBadge}>
+                  <Text style={styles.youBadgeText}>Sen</Text>
+                </View>
               )}
             </View>
           ))}
-          <View style={styles.addRow}>
-            <TextInput
-              style={styles.input}
-              placeholder="Yeni üye adı"
-              placeholderTextColor={colors.textMuted}
-              value={newMemberName}
-              onChangeText={setNewMemberName}
-              onSubmitEditing={handleAddMember}
-            />
-            <TouchableOpacity style={styles.addButton} onPress={handleAddMember} activeOpacity={0.85}>
-              <Ionicons name="add" size={20} color={colors.textOnDark} />
-            </TouchableOpacity>
-          </View>
           <Text style={styles.hint}>
-            Gerçek davetler backend bağlanınca davet koduyla otomatik katılım şeklinde çalışır.
-            Şimdilik demo için üyeleri buradan ekleyebilirsin.
+            Yeni birinin katılması için davet kodunu paylaş — kendi telefonunda "Haneye Katıl"ı seçip kodu girsin.
           </Text>
         </View>
 
@@ -271,16 +251,19 @@ export function SettingsScreen() {
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={toggleNotifications}
+              onValueChange={async (enabled) => {
+                await toggleNotifications(enabled);
+                if (enabled) registerPushToken();
+              }}
               trackColor={{ false: colors.surfaceMuted, true: colors.primaryLight }}
               thumbColor={colors.surface}
             />
           </View>
         </View>
 
-        <TouchableOpacity style={styles.dangerButton} onPress={handleReset} activeOpacity={0.85}>
-          <Ionicons name="trash-outline" size={16} color={colors.danger} />
-          <Text style={styles.dangerButtonText}>Haneyi Sil</Text>
+        <TouchableOpacity style={styles.dangerButton} onPress={handleLeave} activeOpacity={0.85}>
+          <Ionicons name="log-out-outline" size={16} color={colors.danger} />
+          <Text style={styles.dangerButtonText}>Haneden Ayrıl</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -328,7 +311,13 @@ function createStyles(colors: ThemeColors, shadow: { card: object; floating: obj
     paddingVertical: spacing.xs,
   },
   memberName: { flex: 1, fontSize: 14, color: colors.text, fontFamily: fonts.bodySemiBold },
-  removeText: { color: colors.danger, fontSize: 13, fontFamily: fonts.bodyBold },
+  youBadge: {
+    backgroundColor: colors.primaryMuted,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  youBadgeText: { fontSize: 11, fontFamily: fonts.bodyBold, color: colors.primary },
   iconPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
   iconChoice: {
     width: 36,

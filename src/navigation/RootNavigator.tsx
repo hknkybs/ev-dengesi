@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -13,7 +13,7 @@ import { RoomDetailScreen } from '../screens/RoomDetailScreen';
 import { ScoreScreen } from '../screens/ScoreScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { HomeStackParamList, RootTabParamList } from './types';
-import { radius } from '../theme';
+import { radius, spacing } from '../theme';
 import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
 
@@ -90,8 +90,25 @@ function MainTabs() {
   );
 }
 
+function BootScreen({ error }: { error?: string | null }) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: spacing.lg }}>
+      {error ? (
+        <Text style={{ color: colors.danger, fontFamily: fonts.bodyMedium, textAlign: 'center' }}>
+          Bağlantı kurulamadı: {error}
+        </Text>
+      ) : (
+        <ActivityIndicator color={colors.primary} />
+      )}
+    </View>
+  );
+}
+
 export function RootNavigator() {
   const household = useStore((s) => s.household);
+  const bootStatus = useStore((s) => s.bootStatus);
+  const bootError = useStore((s) => s.bootError);
   const { colors, isDark } = useTheme();
 
   const navTheme: Theme = {
@@ -108,7 +125,10 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer theme={navTheme}>
-      {household ? <MainTabs /> : <OnboardingScreen />}
+      {bootStatus === 'loading' && <BootScreen />}
+      {bootStatus === 'error' && <BootScreen error={bootError} />}
+      {bootStatus === 'ready' && household && <MainTabs />}
+      {bootStatus === 'onboarding' && <OnboardingScreen />}
     </NavigationContainer>
   );
 }

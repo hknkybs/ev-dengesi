@@ -33,14 +33,17 @@ export async function scheduleStaleReminder(params: {
   taskName: string;
   roomName: string;
   delayHours: number;
+  assignedName?: string;
 }): Promise<string | undefined> {
-  const { taskName, roomName, delayHours } = params;
+  const { taskName, roomName, delayHours, assignedName } = params;
   if (delayHours <= 0) return undefined;
   try {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: `${roomName} bekliyor`,
-        body: `${taskName} bir süredir yapılmadı.`,
+        body: assignedName
+          ? `${taskName} — sıra ${assignedName}'de, bir süredir yapılmadı.`
+          : `${taskName} bir süredir yapılmadı.`,
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -60,5 +63,18 @@ export function androidChannelSetup() {
       name: 'default',
       importance: Notifications.AndroidImportance.DEFAULT,
     });
+  }
+}
+
+// Phase 2 (server-sent push for assigned tasks): requires an EAS project id
+// in app.json (expo.extra.eas.projectId), which needs an Expo/EAS account —
+// not set up yet. Until then this resolves to undefined and callers should
+// just skip registering a push token.
+export async function getExpoPushToken(): Promise<string | undefined> {
+  try {
+    const result = await Notifications.getExpoPushTokenAsync();
+    return result.data;
+  } catch {
+    return undefined;
   }
 }

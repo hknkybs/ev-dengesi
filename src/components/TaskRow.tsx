@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TaskTemplate } from '../types';
+import { Member, TaskTemplate } from '../types';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme';
 import { ThemeColors } from '../theme/palette';
 import { fonts } from '../theme/typography';
+import { MemberAvatar } from './MemberAvatar';
 
 function formatRelative(timestamp: number | null): string {
   if (!timestamp) return 'Henüz işaretlenmedi';
@@ -21,12 +22,14 @@ export function TaskRow({
   lastCompletedAt,
   lastMemberName,
   cooldownActive,
+  assignedMember,
   onComplete,
 }: {
   task: TaskTemplate;
   lastCompletedAt: number | null;
   lastMemberName: string | null;
   cooldownActive: boolean;
+  assignedMember?: Member;
   onComplete: () => void;
 }) {
   const { colors, gradients, shadow } = useTheme();
@@ -35,7 +38,15 @@ export function TaskRow({
   return (
     <View style={styles.row}>
       <View style={styles.info}>
-        <Text style={styles.name}>{task.name}</Text>
+        <View style={styles.nameRow}>
+          <Text style={styles.name}>{task.name}</Text>
+          {assignedMember && (
+            <View style={styles.assignedBadge}>
+              <MemberAvatar member={assignedMember} size={16} />
+              <Text style={styles.assignedBadgeText}>{assignedMember.displayName}</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.meta}>
           {lastMemberName
             ? `Son: ${lastMemberName} · ${formatRelative(lastCompletedAt)}`
@@ -77,12 +88,22 @@ function createStyles(colors: ThemeColors, shadow: { card: object; floating: obj
       flex: 1,
       marginRight: spacing.sm,
     },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: 2, flexWrap: 'wrap' },
     name: {
       fontSize: 15,
       fontFamily: fonts.bodyBold,
       color: colors.text,
-      marginBottom: 2,
     },
+    assignedBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primaryMuted,
+      borderRadius: radius.pill,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    assignedBadgeText: { fontSize: 10, fontFamily: fonts.bodySemiBold, color: colors.primary },
     meta: {
       fontSize: 12,
       fontFamily: fonts.body,

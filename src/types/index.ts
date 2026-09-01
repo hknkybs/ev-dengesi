@@ -6,6 +6,8 @@ export type HouseholdMode = 'collaborative' | 'competitive';
 
 export type TemplateKey = '1+1' | '2+1' | '3+1' | 'ogrenci-evi' | 'mustakil';
 
+export type BootStatus = 'loading' | 'onboarding' | 'ready' | 'error';
+
 export interface Household {
   id: string;
   name: string;
@@ -17,6 +19,7 @@ export interface Household {
 
 export interface Member {
   id: string;
+  userId: string;
   displayName: string;
   color: string;
   emoji: string;
@@ -38,6 +41,7 @@ export interface TaskTemplate {
   expectedPeriodHours: number;
   cooldownHours: number;
   isInvisibleLabor: boolean;
+  assignedMemberId: string | null;
 }
 
 export type CompletionStatus = 'valid' | 'disputed' | 'no_points';
@@ -49,16 +53,4 @@ export interface Completion {
   completedAt: number;
   awardedPoints: number;
   status: CompletionStatus;
-}
-
-export interface AppState {
-  household: Household | null;
-  members: Member[];
-  rooms: Room[];
-  taskTemplates: TaskTemplate[];
-  completions: Completion[];
-  activeMemberId: string | null;
-  notificationsEnabled: boolean;
-  scheduledNotifications: Record<string, string>;
-  themeMode: ThemeMode;
 }

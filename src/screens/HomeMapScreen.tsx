@@ -5,7 +5,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useStore } from '../state/store';
 import { getLastCompletion, getRoomStaleness } from '../lib/scoring';
 import { RoomTile } from '../components/RoomTile';
-import { MemberSwitcher } from '../components/MemberSwitcher';
 import { radius, spacing } from '../theme';
 import { useTheme } from '../theme/ThemeContext';
 import { ThemeColors } from '../theme/palette';
@@ -68,8 +67,6 @@ export function HomeMapScreen({ navigation }: Props) {
             </View>
           )}
         </View>
-
-        <MemberSwitcher />
 
         <View style={styles.grid}>
           {roomStaleness.map(({ room, bucket }) => {

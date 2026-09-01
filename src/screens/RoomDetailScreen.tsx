@@ -26,7 +26,6 @@ export function RoomDetailScreen({ route, navigation }: Props) {
   const completions = useStore((s) => s.completions);
   const members = useStore((s) => s.members);
   const completeTask = useStore((s) => s.completeTask);
-  const activeMemberId = useStore((s) => s.activeMemberId);
   const renameRoom = useStore((s) => s.renameRoom);
   const updateTask = useStore((s) => s.updateTask);
   const addTask = useStore((s) => s.addTask);
@@ -118,7 +117,13 @@ export function RoomDetailScreen({ route, navigation }: Props) {
         {taskTemplates.map((task) => {
           if (manageMode) {
             return (
-              <TaskEditRow key={task.id} task={task} onUpdate={updateTask} onRemove={removeTask} />
+              <TaskEditRow
+                key={task.id}
+                task={task}
+                members={members}
+                onUpdate={updateTask}
+                onRemove={removeTask}
+              />
             );
           }
 
@@ -128,6 +133,9 @@ export function RoomDetailScreen({ route, navigation }: Props) {
             .sort((a, b) => b.completedAt - a.completedAt)[0];
           const cooldownActive = isWithinCooldown(task, lastValid ? lastValid.completedAt : null);
           const lastMember = last ? members.find((m) => m.id === last.memberId) : undefined;
+          const assignedMember = task.assignedMemberId
+            ? members.find((m) => m.id === task.assignedMemberId)
+            : undefined;
 
           return (
             <TaskRow
@@ -136,6 +144,7 @@ export function RoomDetailScreen({ route, navigation }: Props) {
               lastCompletedAt={last ? last.completedAt : null}
               lastMemberName={lastMember ? lastMember.displayName : null}
               cooldownActive={cooldownActive}
+              assignedMember={assignedMember}
               onComplete={() => completeTask(task.id)}
             />
           );
@@ -155,12 +164,6 @@ export function RoomDetailScreen({ route, navigation }: Props) {
               <Ionicons name="add" size={20} color={colors.textOnDark} />
             </TouchableOpacity>
           </View>
-        )}
-
-        {!activeMemberId && !manageMode && (
-          <Text style={styles.warning}>
-            Aktif üye seçili değil. Ayarlar sekmesinden bir üye seç.
-          </Text>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -249,6 +252,5 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    warning: { color: colors.accent, textAlign: 'center', marginTop: spacing.md, fontSize: 13, fontFamily: fonts.bodyMedium },
   });
 }

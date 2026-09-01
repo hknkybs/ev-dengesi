@@ -7,6 +7,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { androidChannelSetup } from './src/lib/notifications';
 import { FONT_ASSETS } from './src/theme/typography';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { useStore } from './src/state/store';
 
 function AppShell() {
   const { colors, isDark } = useTheme();
@@ -24,6 +25,7 @@ export default function App() {
 
   useEffect(() => {
     androidChannelSetup();
+    useStore.getState().init();
   }, []);
 
   if (!fontsLoaded) {
